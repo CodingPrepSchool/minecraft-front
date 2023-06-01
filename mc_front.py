@@ -2,7 +2,7 @@ from flask import Flask, render_template, request, jsonify, redirect
 import sqlite3
 import json
 import requests
-from forms import PostForm
+from forms import PostForm, TipForm
 
 app=Flask(__name__)
 app.config['SECRET_KEY'] = 'mysecret'
@@ -10,6 +10,11 @@ app.config['SECRET_KEY'] = 'mysecret'
 
 
 baseURL = 'http://127.0.0.1:8080/'
+
+
+@app.route("/error", methods=["GET"])
+def error():
+  return render_template("error.html")
 
 @app.route("/", methods=["GET"])
 def homepage():
@@ -38,3 +43,64 @@ def create_post():
         return "Connection Error"
       if response.status_code == 201:
         return redirect("/")
+      else:
+           print('response', response)
+           return redirect("/error")
+      
+@app.route("/deletepost", methods=["GET"])
+def removes_post():
+    post_id = request.args.get('id')
+    uri = baseURL + 'api/post/' + post_id
+    try: 
+      response = requests.delete(uri)
+    except requests.ConnectionError:
+      return "Connection Error"
+    if response.status_code == 200:
+      return redirect("/")
+    else:
+      return redirect("/error")
+
+
+@app.route("/survivaltips", methods=["GET"])
+def tips():
+  tip_form = TipForm(csrf_enabled=False)
+  uri = baseURL + 'api/tips' 
+  try: 
+    response = requests.get(uri)
+  except requests.ConnectionError:
+    return "Connection Error"
+  json_response = response.text
+  data = json.loads(json_response)
+  return render_template("survival_tips.html", tips=data, template_form=tip_form)
+
+@app.route("/deletetip", methods=["GET"])
+def removes_tip():
+    tip_id = request.args.get('id')
+    uri = baseURL + 'api/tips/' + tip_id
+    try: 
+      response = requests.delete(uri)
+    except requests.ConnectionError:
+      return "Connection Error"
+    if response.status_code == 200:
+      return redirect("/")
+    else:
+      return redirect("/error")
+    
+@app.route("/post_tip", methods=["POST"])
+def create_tip():
+  tip_form = TipForm(csrf_enabled=False)
+  uri = baseURL + 'api/tips'
+  if tip_form.validate_on_submit():
+      tip_json = {
+        "tip": tip_form.tip.data,
+        "description": tip_form.description.data,
+      }
+      try: 
+        response = requests.post(uri, json = tip_json)
+      except requests.ConnectionError:
+        return "Connection Error"
+      if response.status_code == 201:
+        return redirect("/survivaltips")
+      else:
+           print('response', response)
+           return redirect("/error")
