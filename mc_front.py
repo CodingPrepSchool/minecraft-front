@@ -104,3 +104,45 @@ def create_tip():
       else:
            print('response', response)
            return redirect("/error")
+      
+@app.route("/edit_tip", methods=["GET"])
+def tip_recipe():
+  tip_id = request.args.get('id')
+  uri = baseURL + '/api/tips/edit' + tip_id
+  try: 
+    response = requests.get(uri)
+  except requests.ConnectionError:
+    return "Connection Error"
+  json_response = response.text
+  data = json.loads(json_response)
+  "tip": tip_form.tip.data
+  "description": tip_form.description.data
+
+  form_values = {
+    "id": tip_id,
+    "tip": data["tip"],
+    "description": data["description"]
+  }
+
+  tip_form = TipForm(csrf_enabled=False, data=form_values)
+  return render_template("edit_tip.html", template_form=tip_form)
+
+
+@app.route("/edit_tip", methods=["POST"])
+def edit_tip_post():
+  tip_form = TipForm(csrf_enabled=False)
+  id = tip_form.id.data
+  uri = baseURL + '/api/tips/edit' + id
+  if tip_form.validate_on_submit():
+      tip_json = {
+        "tip": tip_form.tip.data,
+        "description": tip_form.description.data,
+      }
+      try: 
+        response = requests.put(uri, json = tip_json)
+      except requests.ConnectionError:
+        return "Connection Error"
+      if response.status_code == 201:
+        return redirect("/browse_recipes")
+      else:
+        return redirect("/error")
