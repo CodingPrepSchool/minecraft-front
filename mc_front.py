@@ -86,6 +86,8 @@ def removes_tip():
     else:
       return redirect("/error")
     
+
+
 @app.route("/post_tip", methods=["POST"])
 def create_tip():
   tip_form = TipForm(csrf_enabled=False)
@@ -105,21 +107,21 @@ def create_tip():
            print('response', response)
            return redirect("/error")
       
+#edit tip stuff
+
 @app.route("/edit_tip", methods=["GET"])
 def tip_recipe():
   tip_id = request.args.get('id')
-  uri = baseURL + '/api/tips/edit' + tip_id
+  uri = baseURL + 'api/tips/edit/' + tip_id
   try: 
     response = requests.get(uri)
   except requests.ConnectionError:
     return "Connection Error"
   json_response = response.text
   data = json.loads(json_response)
-  "tip": tip_form.tip.data
-  "description": tip_form.description.data
 
   form_values = {
-    "id": tip_id,
+    "tip_id": data["tip_id"],
     "tip": data["tip"],
     "description": data["description"]
   }
@@ -131,18 +133,18 @@ def tip_recipe():
 @app.route("/edit_tip", methods=["POST"])
 def edit_tip_post():
   tip_form = TipForm(csrf_enabled=False)
-  id = tip_form.id.data
-  uri = baseURL + '/api/tips/edit' + id
+  tip_id = tip_form.tip_id.data
+  uri = baseURL + 'api/tips/edit/' + tip_id
   if tip_form.validate_on_submit():
       tip_json = {
         "tip": tip_form.tip.data,
-        "description": tip_form.description.data,
+        "description": tip_form.description.data
       }
       try: 
         response = requests.put(uri, json = tip_json)
       except requests.ConnectionError:
         return "Connection Error"
       if response.status_code == 201:
-        return redirect("/browse_recipes")
+        return redirect("/survivaltips")
       else:
         return redirect("/error")
